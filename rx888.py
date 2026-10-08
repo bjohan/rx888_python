@@ -14,60 +14,15 @@ def prepare_for_cffi(data):
     out = '\n'.join(out)
     return out
 
-#class RingBuffer:
-#    def __init__(self, nbuf, bufsz, dtype=np.int16):
-#        self.bufs = nbuf*[np.zeros((bufsz, ), dtype=dtype)]
-#        self.bufFill = nbuf*[0]
-#        self.wbuf = 0
-#        self.rbuf = 0
-#        self.bufsz = bufsz
-#        self.nbuf = nbuf
-#        self.dtype = dtype
-#
-#    def write(self, inbuf, count):
-#        if self.bufFill[self.wbuf]+count >= self.bufsz:
-#            nextBuf = (self.wbuf+1)%self.nbuf
-#            if nextBuf == self.rbuf:
-#                return #full
-#            self.wbuf = nextBuf
-#        bpos = self.bufFill[self.wbuf]
-#        self.bufs[self.wbuf][bpos:bpos+count] = inbuf #np.frombuffer(ffi.buffer(inbuf, count*ffi.sizeof("int16_t")), dtype=np.dtype)
-#        self.bufFill[self.wbuf]+=count
-#
-#    def read(self):
-#        if self.wbuf==self.rbuf:
-#            return None, 0
-#        retData = (copy.deepcopy(self.bufs[self.rbuf]), copy.deepcopy(self.bufFill[self.rbuf]))
-#        #retData = (self.bufs[self.rbuf], self.bufFill[self.rbuf])
-#        self.bufFill[self.rbuf]=0
-#        self.rbuf = (self.rbuf+1)%self.nbuf
-#        return retData
-#
-#    def read_peek_size(self):
-#        if self.wbuf==self.rbuf:
-#            return 0
-#        return self.bufFill[self.rbuf]
-
-
 ffi = FFI()
 ffi.cdef(prepare_for_cffi(open("./rx888/target/release/libsddc.h").read()));
 lib = ffi.dlopen("./rx888/target/release/libsddc.so")
 
-#ring_buffers = {}
-
-#@ffi.callback("void(const int16_t *, uint32_t, void *)")
-#def read_callback(buf, count, ctx):
-#    global ring_buffers
-#    index = ffi.cast("int", ctx)
-#    ring_buffers[index].write(np.frombuffer(ffi.buffer(buf, count*ffi.sizeof("int16_t")), dtype=np.int16)
-#, count)
-
 class Rx888:
     def __init__(self, index=0, sample_rate=64000000, nbuf=512, bufsz=8192*64):
-        print("nbuf", nbuf, "bufsz", bufsz)
-        print("Buftime:", bufsz/sample_rate)
+        print("Buffer rate:", 1/(bufsz/sample_rate), "Hz")
+        print("Total buffer time:", nbuf*bufsz/sample_rate)
         self.rb = ringbuffer.ring_buffer.RingBuffer(nbuf, bufsz)
-        print(dir(ringbuffer.ring_buffer))
         self.sample_rate = sample_rate
         self.index = index
         self.phandle = ffi.new("struct sddc_dev_t **")
@@ -98,10 +53,6 @@ class Rx888:
 
     def start_async(self, callback=ringbuffer.ring_buffer.get_Rx888Callback()):
         #if lib.sddc_read_async(self.phandle[0], callback, ffi.cast("void *", self.index)):
-        print("ringbuf dir", dir(self.rb))
-        print("ring buf", self.rb)
-        print("ringbuf %x"%(self.rb.address()))
-        print("callback %x"%(callback))
         if lib.sddc_read_async(self.phandle[0], ffi.cast("void(*)(const int16_t *, uint32_t, void*)", callback), ffi.cast("void *", self.rb.address())):
             raise Exception("Failed to set callback")
 

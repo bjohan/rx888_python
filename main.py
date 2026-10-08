@@ -11,23 +11,6 @@ thread = Thread(target=dev.start_async())
 thread.start()
 t0 = time.time();
 print("Starting read")
-#sample_buf = np.zeros((int(64e6),), dtype=np.int16)
-#spos = 0
-#for i in range(10):
-#    spos = 0
-#    while True:
-#        data = dev.read(16);
-#        if sz+spos >= len(sample_buf):
-#            sample_buf[spos:]=data[0:len(sample_buf)-spos]
-#            spos+=len(sample_buf)-spos
-#            break
-#        if sz == 0:
-#            time.sleep(0.5)
-#        else:
-#            sample_buf[spos:spos+sz]=data[0:sz]
-#            spos+=sz
-#time.sleep(1)
-#for i in range(8):
 tplt = time.time();
 try:
     while True:
@@ -44,6 +27,5 @@ print("got", sample_buf.shape, sample_buf.dtype, "samples in", time.time()-t0, "
 dev.cancel_async()
 thread.join()
 print("sample_buf", sample_buf[100000:100100])
-#plt.plot(tax, np.real(a)/np.max(np.abs(a)))
 plt.plot(sample_buf[:110000])
 plt.show()
