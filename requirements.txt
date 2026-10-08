@@ -1,0 +1,6 @@
+cffi
+numpy
+matplotlib
+scipy
+setuptools
+pybind11
